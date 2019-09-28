@@ -17,12 +17,9 @@ window.onload = function(){
 		},
 		physics: {
 			default: "matter",
-			arcade:{
-				gravity: {
-					x: 0,
-					y: 0,
-				},
+			matter:{
 				debug: true,
+				debugBodyColor: 0xff0000,
 			}
 		}
 	});
