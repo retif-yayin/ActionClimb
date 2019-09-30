@@ -3,6 +3,8 @@ var game;
 var gameOptions = {
 	width:1920,
 	height:1080,
+	acceleration: [0.01, -0.005],
+	maxVelocity: 1.2,
 };
 
 window.onload = function(){
@@ -19,7 +21,7 @@ window.onload = function(){
 			default: "matter",
 			matter:{
 				debug: true,
-				debugBodyColor: 0xff0000,
+				debugBodyColor: 0x000000,
 			}
 		}
 	});
