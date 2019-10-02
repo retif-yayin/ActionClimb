@@ -32,9 +32,22 @@ class playGame extends Phaser.Scene{
 			this.grounds.push(graphic);
 		}
 
-		this.addCar();
+		this.terrainInfo = this.add.text(0, gameOptions.height-110, "", {
+			fontFamily: "Arial",
+			fontSize: 64,
+			color: '#00ff00',
+		});
+
+		this.addCar(500,500);
 		this.input.on("pointerdown", this.accelerate, this);
 		this.input.on("pointerup", this.decelerate, this);
+		this.matter.world.on("collisionstart", this.gameOver, this);
+	}
+
+	gameOver(event, bodyA, bodyB){
+		if((bodyA.label == "diamond" && bodyB.label == "ground") || (bodyA.label == "ground" && bodyB.label == "diamond")){
+            this.scene.restart();
+        }
 	}
 
 	drawGround(graphic, startHeight){
@@ -71,7 +84,8 @@ class playGame extends Phaser.Scene{
 			let angle = Phaser.Geom.Line.Angle(line);
 			this.matter.add.rectangle(graphic.x+center.x, center.y, distance, 10, {
 				isStatic: true,
-				angle: angle
+				angle: angle,
+				label: "ground"
 			});
 		}
 
@@ -90,6 +104,7 @@ class playGame extends Phaser.Scene{
 		var centery = slopeCurvePoints[slopeCurvePoints.length-1];
 		this.matter.add.rectangle(graphic.x+centerx, centery, gameOptions.width - totalLength, 10, {
 			isStatic: true,
+			label: "ground",
 		});
 
 		graphic.lineStyle(16, 0x6b9b1e);
@@ -102,42 +117,63 @@ class playGame extends Phaser.Scene{
 		return lastHeight;
 	}
 
-	addCar(){
-		this.body = this.matter.add.rectangle(gameOptions.width/8, 500, 200, 60, {
+	addCar(posX, posY){
+
+		//BUILD THE MAIN CAR
+		var chase = Phaser.Physics.Matter.Matter.Bodies.rectangle(posX, posY, 200, 20, {
+			label: "car",
+		});
+		var rightBarrier = Phaser.Physics.Matter.Matter.Bodies.rectangle(posX+90, posY-35, 20, 50, {
+			label: "car",
+		})
+		var leftBarrier = Phaser.Physics.Matter.Matter.Bodies.rectangle(posX-90, posY-35, 20, 50, {
+			label: "car",
+		});
+
+		this.body = Phaser.Physics.Matter.Matter.Body.create({
+			parts: [chase, rightBarrier, leftBarrier],
 			friction: 1,
 			restitution: 0
 		});
+		this.matter.world.add(this.body);
 
-		this.frontWheel = this.matter.add.polygon(gameOptions.width/8+50, 570, 8, 32, {
+		//ADD DIAMOND
+		this.diamond = this.matter.add.rectangle(posX, posY-45, 30, 30, {
+			friction: 1,
+			restitution: 0,
+			label: "diamond",
+		});
+
+		this.frontWheel = this.matter.add.circle(posX+50, posY+50, 40, {
 			friction: 1,
 			restitution: 0,
 		});
 
-		this.rearWheel = this.matter.add.polygon(gameOptions.width/8-50, 570, 8, 32, {
+		this.rearWheel = this.matter.add.circle(posX-50, posY+50, 40, {
 			friction: 1,
 			restitution: 0
 		});
 
-		this.matter.add.constraint(this.body, this.frontWheel, 30, 0, {
+		this.matter.add.constraint(this.body, this.frontWheel, 40, 0, {
 			pointA: {
 				x:35,
 				y:40,
 			}
 		});
-		this.matter.add.constraint(this.body, this.frontWheel, 30, 0, {
+		this.matter.add.constraint(this.body, this.frontWheel, 40, 0, {
 			pointA: {
 				x: 70,
 				y:40
 			}
 		});
 
-		this.matter.add.constraint(this.body, this.rearWheel, 30, 0, {
+		this.matter.add.constraint(this.body, this.rearWheel, 40, 0, {
 			pointA: {
 				x:-35,
 				y:40,
 			}
 		});
-		this.matter.add.constraint(this.body, this.rearWheel, 30, 0, {
+		this.matter.add.constraint(this.body, this.rearWheel, 40, 0, {
 			pointA: {
 				x: -70,
 				y:40
@@ -155,7 +191,11 @@ class playGame extends Phaser.Scene{
 
 
 	update(time, delta){
-		this.cameras.main.scrollX = this.body.position.x - gameOptions.width/8;
+		var zoom = 1 - Phaser.Math.Clamp(this.body.speed, 0, 1) / 25;
+
+		this.cameras.main.zoomTo(zoom, 1000, "Linear", false);
+		this.cameras.main.scrollX = this.body.position.x - gameOptions.width/4 + gameOptions.width*(1-this.cameras.main.zoom);
+		this.cameras.main.scrollY = this.body.position.y - gameOptions.height/2.2;
 
 		this.velocity += this.acceleration;
 		this.velocity = Phaser.Math.Clamp(this.velocity, 0, gameOptions.maxVelocity);
@@ -165,12 +205,14 @@ class playGame extends Phaser.Scene{
 
 		this.grounds.forEach(function(ground){
 			if(this.cameras.main.scrollX > ground.x+1920){
-				console.log("regenerate");
 				ground.x = this.lastWidth+1920;
 				this.lastWidth = ground.x;
 				this.lastHeight = this.drawGround(ground, this.lastHeight);
 			}
 		}.bind(this));
+
+		this.terrainInfo.x = this.cameras.main.scrollX + 50;
+        this.terrainInfo.setText("Distance: " + Math.floor(this.cameras.main.scrollX / 100));
 	}
 
 }
