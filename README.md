@@ -8,6 +8,10 @@
   </a>
 
   <h3 align="center">ActionClimb</h3>
+  
+  <p align="center">
+  <img src="https://retif-yayin.github.io/ActionClimb/screenshot.png" width="400">
+  </p>
 
   <p align="center">
     HillClimb style physics game try. This is just for example purpose and you can use it anyway you want!
